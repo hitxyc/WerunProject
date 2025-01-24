@@ -1,0 +1,187 @@
+definitions:
+  entity.ResultEntity:
+    properties:
+      data: {}
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  entity.Student:
+    properties:
+      class:
+        type: string
+      gender:
+        type: string
+      name:
+        type: string
+      score:
+        additionalProperties:
+          type: number
+        type: object
+      student_id:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  title: 学生管理系统 API
+  version: "1.0"
+paths:
+  /student/delete:
+    delete:
+      consumes:
+      - application/json
+      description: 通过学生的 `id` 删除学生的详细信息
+      parameters:
+      - description: 学生ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ResultEntity'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ResultEntity'
+      summary: 删除学生信息
+      tags:
+      - student
+  /student/get:
+    get:
+      consumes:
+      - application/json
+      description: 根据学生的学号查询学生信息
+      parameters:
+      - description: 学生ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ResultEntity'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ResultEntity'
+      summary: 查询学生信息
+      tags:
+      - student
+  /student/save:
+    post:
+      consumes:
+      - application/json
+      description: 保存学生的学号,姓名,性别,班级,成绩
+      parameters:
+      - description: 学生信息
+        in: body
+        name: student
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Student'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ResultEntity'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ResultEntity'
+      summary: 保存学生信息
+      tags:
+      - student
+  /student/saveByFile:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 通过上传文件保存学生信息
+      parameters:
+      - description: 上传文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ResultEntity'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/entity.ResultEntity'
+      summary: 通过上传文件保存学生信息
+      tags:
+      - student
+  /student/show:
+    get:
+      consumes:
+      - application/json
+      description: 分页显示学生信息
+      parameters:
+      - description: 当前页数
+        in: query
+        name: page
+        type: integer
+      - description: 每页显示的记录数
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ResultEntity'
+      summary: 显示学生信息
+      tags:
+      - student
+  /student/update:
+    put:
+      consumes:
+      - application/json
+      description: 通过学生的 `id` 更新学生的详细信息
+      parameters:
+      - description: 学生ID
+        in: query
+        name: id
+        required: true
+        type: string
+      - description: 学生信息
+        in: body
+        name: student
+        required: true
+        schema:
+          $ref: '#/definitions/entity.Student'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.ResultEntity'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/entity.ResultEntity'
+      summary: 更新学生信息
+      tags:
+      - student
+swagger: "2.0"
