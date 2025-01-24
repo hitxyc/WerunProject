@@ -7,21 +7,6 @@ definitions:
       success:
         type: boolean
     type: object
-  entity.Student:
-    properties:
-      class:
-        type: string
-      gender:
-        type: string
-      name:
-        type: string
-      score:
-        additionalProperties:
-          type: number
-        type: object
-      student_id:
-        type: string
-    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -88,8 +73,12 @@ paths:
         in: body
         name: student
         required: true
-        schema:
-          $ref: '#/definitions/entity.Student'
+        schema: {}
+      - description: 是否为研究生
+        in: query
+        name: is_graduate
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -115,6 +104,11 @@ paths:
         name: file
         required: true
         type: file
+      - description: 是否为研究生
+        in: query
+        name: is_graduate
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -164,12 +158,16 @@ paths:
         name: id
         required: true
         type: string
+      - description: 是否为研究生
+        in: query
+        name: is_graduate
+        required: true
+        type: string
       - description: 学生信息
         in: body
         name: student
         required: true
-        schema:
-          $ref: '#/definitions/entity.Student'
+        schema: {}
       produces:
       - application/json
       responses:

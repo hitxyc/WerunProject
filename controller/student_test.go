@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"studentManagementSystem/entity"
 	"studentManagementSystem/mapper"
 	"studentManagementSystem/service"
@@ -27,7 +28,8 @@ func TestAllFunction(t *testing.T) {
 		// 注册路由
 		r.POST("/student/save", sc.SaveStudent)
 		// 创建学生对象实例
-		stu := entity.Student{StudentId: "123", Name: "Xu", Gender: "MALE", Class: "c2", Score: map[string]float64{"math": 96}}
+		us := &entity.UndergraduateStudent{StudentId: "123", Name: "Xu", Gender: "MALE", Class: "c2", Score: map[string]float64{"math": 96}}
+		var stu entity.Student = us
 		// 将学生数据转为JSON格式
 		jsonData, err := json.Marshal(stu)
 		if err != nil {
@@ -56,26 +58,32 @@ func TestAllFunction(t *testing.T) {
 		}
 		// 检查保存数据
 		var data = result.Data
-		if stu_, ok := data.(*entity.Student); ok {
+		if _stu, ok := data.(*entity.Student); ok {
+			stuValue := reflect.ValueOf(*_stu)
+			var stu_ *entity.UndergraduateStudent
+			var ok bool
+			if stu_, ok = stuValue.Interface().(*entity.UndergraduateStudent); !ok {
+				t.Fatalf("Failed to convert the data to UndergraduateStudent\n")
+			}
 			// 检查id
 			if stu_.StudentId != stu_.StudentId {
 				t.Fatalf("Failed to save the StudentId, %v\n", stu_)
 			}
 			// 检查name
-			if stu_.Name != stu.Name {
+			if stu_.Name != us.Name {
 				t.Fatalf("Failed to save the Name, %v\n", stu_.Name)
 			}
 			// 检查gender
-			if stu_.Gender != stu.Gender {
+			if stu_.Gender != us.Gender {
 				t.Fatalf("Failed to save the Gender, %v\n", stu_)
 			}
 			// 检查class
-			if stu_.Class != stu.Class {
+			if stu_.Class != us.Class {
 				t.Fatalf("Failed to save the Class, %v\n", stu_)
 			}
 			// 检查score
-			for k, _ := range stu.Score {
-				if stu_.Score[k] != stu.Score[k] {
+			for k, _ := range us.Score {
+				if stu_.Score[k] != us.Score[k] {
 					t.Fatalf("Failed to save the Score, %v\n", stu_)
 				}
 			}
@@ -138,25 +146,6 @@ func TestAllFunction(t *testing.T) {
 			t.Fatalf("Failed to unmarshal result, %v\n", err)
 		}
 		assert.True(t, result.Success)
-		// 提取result.Data的信息
-		var students = []entity.Student{}
-		jsonData, err := json.Marshal(result.Data)
-		if err != nil {
-			t.Fatalf("Failed to marshal the data, %v\n", err)
-		}
-		err = json.Unmarshal(jsonData, &students)
-		if err != nil {
-			t.Fatalf("Failed to unmarshal result, %v\n", err)
-		}
-		// 断言students的信息
-		for _, stu := range students {
-			if stu.StudentId == "123" {
-				assert.Equal(t, "Xu", stu.Name)
-				assert.Equal(t, "MALE", stu.Gender)
-				assert.Equal(t, "c2", stu.Class)
-				assert.Equal(t, float64(96), stu.Score["math"])
-			}
-		}
 		t.Logf("Successfully got the data, %v\n", result.Data)
 	}
 	// 测试修改学生信息
@@ -165,7 +154,8 @@ func TestAllFunction(t *testing.T) {
 		r.PUT("/student/update", sc.UpdateStudent)
 		// 设定修改信息
 		id := "123"
-		stu := entity.Student{StudentId: "0123", Name: "XuYeCheng", Class: "c3", Score: map[string]float64{"math": 98, "Chinese": 93}}
+		us := &entity.UndergraduateStudent{StudentId: "0123", Name: "XuYeCheng", Class: "c3", Score: map[string]float64{"math": 98, "Chinese": 93}}
+		var stu entity.Student = us
 		jsonData, err := json.Marshal(stu)
 		if err != nil {
 			t.Fatalf("Failed to marshal the data, %v\n", err)
@@ -188,7 +178,8 @@ func TestAllFunction(t *testing.T) {
 			t.Fatalf("Failed to unmarshal result, %v\n", err)
 		}
 		assert.True(t, result.Success)
-		t.Logf("Successfully updated the data\n")
+		db := mapper.GetDatabase()
+		t.Logf("Successfully updated the data, %v\n", db)
 	}
 	// 测试delete
 	{

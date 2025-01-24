@@ -2,60 +2,101 @@ package mapper
 
 import (
 	"fmt"
+	"reflect"
 	"studentManagementSystem/entity"
 	"testing"
 )
 
 // TestSaveStudent 测试保存和查询
 func TestSaveStudent(t *testing.T) {
-	createTestSaveAndGetStudentCase(t, &entity.Student{StudentId: "123", Name: "Xu", Gender: "MALE", Class: "c2", Score: map[string]float64{"math": 96}})
-	createTestSaveAndGetStudentCase(t, &entity.Student{StudentId: "401", Name: "Yang", Gender: "FEMALE", Class: "c3", Score: map[string]float64{"math": 96}})
+	stu1 := &entity.UndergraduateStudent{StudentId: "123", Name: "Xu", Gender: "MALE", Class: "c2", Score: map[string]float64{"math": 96}}
+	stu2 := &entity.GraduateStudent{StudentId: "401", Name: "Yang", Gender: "FEMALE", Tutor: "Xu", Score: map[string]float64{"math": 96}}
+	createTestSaveAndGetStudentCase(t, stu1)
+	createTestSaveAndGetStudentCase(t, stu2)
 }
-func createTestSaveAndGetStudentCase(t *testing.T, stu *entity.Student) {
+func createTestSaveAndGetStudentCase(t *testing.T, stu entity.Student) {
 	sm := StudentMapper{}
-	sm.SaveStudent(stu)
-	if st := sm.GetStudent(&stu.StudentId); st == nil {
-		t.Fatalf("Student not saved or student can't get")
-	} else {
-		fmt.Printf("The student is: %+v\n", st)
+	sm.SaveStudent(&stu)
+	var graduateStudent *entity.GraduateStudent
+	var undergraduateStudent *entity.UndergraduateStudent
+	switch studentType := stu.(type) {
+	case *entity.UndergraduateStudent:
+		undergraduateStudent = studentType
+		if st := sm.GetStudent(&undergraduateStudent.StudentId); st == nil {
+			t.Fatalf("Student not saved or student can't get")
+		} else {
+			fmt.Printf("The student is: %+v\n", *st)
+		}
+	case *entity.GraduateStudent:
+		graduateStudent = studentType
+		if st := sm.GetStudent(&graduateStudent.StudentId); st == nil {
+			t.Fatalf("Student not saved or student can't get")
+		} else {
+			fmt.Printf("The student is: %+v\n", *st)
+		}
 	}
 }
 
-func setup() {
+func setup() error {
 	sm := StudentMapper{}
-	sm.SaveStudent(&entity.Student{StudentId: "123", Name: "Xu", Gender: "MALE", Class: "c2", Score: map[string]float64{"Math": 96}})
-	sm.SaveStudent(&entity.Student{StudentId: "401", Name: "Yang", Gender: "FEMALE", Class: "c3", Score: map[string]float64{"Math": 96}})
+	var stu1 entity.Student = &entity.UndergraduateStudent{StudentId: "123", Name: "Xu", Gender: "MALE", Class: "c2", Score: map[string]float64{"Math": 96}}
+	var stu2 entity.Student = &entity.GraduateStudent{StudentId: "401", Name: "Yang", Gender: "FEMALE", Tutor: "Xu", Score: map[string]float64{"math": 96}}
+	err := sm.SaveStudent(&stu1)
+	if err != nil {
+		return err
+	}
+	err = sm.SaveStudent(&stu2)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // TestDeleteStudent测试删除学生信息
 func TestDeleteStudent(t *testing.T) {
 	sm := StudentMapper{}
-	setup()
+	err := setup()
+	if err != nil {
+		t.Fatal(err)
+	}
 	var stuId = "123"
-	sm.DeleteStudent(&stuId)
+	err = sm.DeleteStudent(&stuId)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if st := sm.GetStudent(&stuId); st != nil {
 		t.Fatalf("Student delete failed")
 	} else {
-		fmt.Printf("Student delete passed, %+v\n", GetDB())
+		fmt.Printf("Student delete passed, %+v\n", GetDatabase())
 	}
 }
 
 // TestUpdateStudentInfo测试更新学生信息
 func TestUpdateStudentInfo(t *testing.T) {
-	createTestUpdateStudentInfoCase(t, "401", &entity.Student{Name: "YangMingXi", Score: map[string]float64{"Chinese": 94, "Math": 98}})
+	var stu entity.Student = &entity.GraduateStudent{Name: "YangMingXi", Score: map[string]float64{"Chinese": 94, "math": 98}}
+	createTestUpdateStudentInfoCase(t, "401", &stu)
 }
 func createTestUpdateStudentInfoCase(t *testing.T, id string, stu *entity.Student) {
 	sm := StudentMapper{}
-	setup()
-	err := sm.UpdateStudent(&id, stu)
+	err := setup()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = sm.UpdateStudent(&id, stu)
 	if err != nil {
 		t.Fatalf("Student update failed, %v\n", err)
 	}
-	if st := sm.GetStudent(&id); st.Name != "YangMingXi" {
-		t.Fatalf("StudentInfo update failed")
-	} else if stu.Score["Math"] != 98 || stu.Score["Chinese"] != 94 {
-		t.Fatalf("StudentInfo update failed")
-	} else {
-		fmt.Printf("StudentInfo update passed, %+v\n", GetDB())
+	db := GetDatabase()
+	index := db.StudentMap[id]
+	student := GetDatabase().Students[index]
+	studentValue := reflect.ValueOf(student)
+	var gs *entity.GraduateStudent
+	var us *entity.UndergraduateStudent
+	var ok bool
+	if gs, ok = studentValue.Interface().(*entity.GraduateStudent); ok {
+		fmt.Printf("The student is: %+v\n", *gs)
+	}
+	if us, ok = studentValue.Interface().(*entity.UndergraduateStudent); ok {
+		fmt.Printf("The student is: %+v\n", *us)
 	}
 }

@@ -29,15 +29,28 @@ func dealWithResult(c *gin.Context, result *entity.ResultEntity, failed_code int
 // @Accept json
 // @Produce json
 // @Param student body entity.Student true "学生信息"
+// @Param is_graduate query string true "是否为研究生"
 // @Success 200 {object} entity.ResultEntity
 // @Failure 400 {object} entity.ResultEntity
 // @Router /student/save [POST]
 func (sc *StudentController) SaveStudent(c *gin.Context) {
 	var student entity.Student
-	err := c.ShouldBind(&student)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, entity.ResultEntity{Message: err.Error(), Success: false})
-		return
+	isGraduate := c.Query("is_graduate")
+	// 判断是否为研究生
+	if isGraduate == "true" {
+		var gs entity.GraduateStudent
+		err := c.ShouldBind(&gs)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		student = &gs
+	} else {
+		var us entity.UndergraduateStudent
+		err := c.ShouldBind(&us)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		student = &us
 	}
 	result := sc.StudentService.SaveStudent(&student)
 	dealWithResult(c, &result, http.StatusBadRequest)
@@ -50,6 +63,7 @@ func (sc *StudentController) SaveStudent(c *gin.Context) {
 // @Accept multipart/form-data
 // @Produce json
 // @Param file formData file true "上传文件"
+// @Param is_graduate query string true "是否为研究生"
 // @Success 200 {object} entity.ResultEntity
 // @Failure 400 {object} entity.ResultEntity
 // @Router /student/saveByFile [POST]
@@ -68,7 +82,12 @@ func (sc *StudentController) SaveStudentByFile(c *gin.Context) {
 		return
 	}
 	// 文件上传完毕, 读取文件信息
-	err = utils.DealWithCSV("./uploads/" + file.Filename)
+	isGraduate := c.Query("is_graduate") // 判断是否为研究生
+	is_graduate, err := strconv.ParseBool(isGraduate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, entity.ResultEntity{Message: err.Error(), Success: false})
+	}
+	err = utils.DealWithCSV("./uploads/"+file.Filename, is_graduate)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, entity.ResultEntity{Message: err.Error(), Success: false})
 		return
@@ -122,6 +141,7 @@ func (sc *StudentController) ShowStudent(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id query string true "学生ID"
+// @Param is_graduate query string true "是否为研究生"
 // @Param student body entity.Student true "学生信息"
 // @Success 200 {object} entity.ResultEntity
 // @Failure 404 {object} entity.ResultEntity
@@ -129,10 +149,21 @@ func (sc *StudentController) ShowStudent(c *gin.Context) {
 func (sc *StudentController) UpdateStudent(c *gin.Context) {
 	var student entity.Student
 	id := c.Query("id")
-	err := c.ShouldBind(&student)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, entity.ResultEntity{Message: err.Error(), Success: false})
-		return
+	isGraduate := c.Query("is_graduate")
+	if isGraduate == "true" {
+		var gs entity.GraduateStudent
+		err := c.ShouldBind(&gs)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		student = &gs
+	} else {
+		var us entity.UndergraduateStudent
+		err := c.ShouldBind(&us)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		student = &us
 	}
 	result := sc.StudentService.UpdateStudent(&id, &student)
 	dealWithResult(c, &result, http.StatusNotFound)

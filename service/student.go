@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"studentManagementSystem/entity"
 	"studentManagementSystem/mapper"
@@ -14,20 +15,40 @@ type StudentService struct {
 // dealWithOmission 处理空值
 func dealWithOmission(student *entity.Student) error {
 	var errorMessage strings.Builder
-	if student.StudentId == "" {
-		errorMessage.WriteString(fmt.Sprintf("student id is empty\n"))
+	studentValue := reflect.ValueOf(*student)
+	if gs, ok := studentValue.Interface().(*entity.GraduateStudent); ok {
+		if gs.StudentId == "" {
+			errorMessage.WriteString(fmt.Sprintf("StudentId is empty."))
+		}
+		if gs.Name == "" {
+			errorMessage.WriteString(fmt.Sprintf("StudentName is empty."))
+		}
+		if gs.Gender == "" {
+			errorMessage.WriteString(fmt.Sprintf("student gender is empty\n"))
+		}
+		if gs.Tutor == "" {
+			errorMessage.WriteString(fmt.Sprintf("student tutor is empty\n"))
+		}
+		if gs.Score == nil {
+			gs.Score = make(map[string]float64)
+		}
 	}
-	if student.Name == "" {
-		errorMessage.WriteString(fmt.Sprintf("student name is empty\n"))
-	}
-	if student.Gender == "" {
-		errorMessage.WriteString(fmt.Sprintf("student gender is empty\n"))
-	}
-	if student.Class == "" {
-		errorMessage.WriteString(fmt.Sprintf("student class is empty\n"))
-	}
-	if student.Score == nil {
-		student.Score = make(map[string]float64)
+	if us, ok := studentValue.Interface().(entity.UndergraduateStudent); ok {
+		if us.StudentId == "" {
+			errorMessage.WriteString(fmt.Sprintf("student id is empty\n"))
+		}
+		if us.Name == "" {
+			errorMessage.WriteString(fmt.Sprintf("student name is empty\n"))
+		}
+		if us.Gender == "" {
+			errorMessage.WriteString(fmt.Sprintf("student gender is empty\n"))
+		}
+		if us.Class == "" {
+			errorMessage.WriteString(fmt.Sprintf("student class is empty\n"))
+		}
+		if us.Score == nil {
+			us.Score = make(map[string]float64)
+		}
 	}
 	if errorMessage.Len() > 0 {
 		return fmt.Errorf(errorMessage.String())
@@ -41,7 +62,10 @@ func (ss *StudentService) SaveStudent(student *entity.Student) entity.ResultEnti
 	if err != nil {
 		return entity.ResultEntity{Message: err.Error(), Success: false}
 	}
-	ss.StudentMapper.SaveStudent(student)
+	err = ss.StudentMapper.SaveStudent(student)
+	if err != nil {
+		return entity.ResultEntity{Message: err.Error(), Success: false}
+	}
 	return entity.ResultEntity{Message: "Student saved", Success: true, Data: *student}
 }
 

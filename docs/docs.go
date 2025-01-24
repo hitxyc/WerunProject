@@ -110,9 +110,14 @@ const docTemplate = `{
                         "name": "student",
                         "in": "body",
                         "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/entity.Student"
-                        }
+                        "schema": {}
+                    },
+                    {
+                        "type": "string",
+                        "description": "是否为研究生",
+                        "name": "is_graduate",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -150,6 +155,13 @@ const docTemplate = `{
                         "description": "上传文件",
                         "name": "file",
                         "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "是否为研究生",
+                        "name": "is_graduate",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -228,13 +240,18 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "是否为研究生",
+                        "name": "is_graduate",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
                         "description": "学生信息",
                         "name": "student",
                         "in": "body",
                         "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/entity.Student"
-                        }
+                        "schema": {}
                     }
                 ],
                 "responses": {
@@ -264,29 +281,6 @@ const docTemplate = `{
                 },
                 "success": {
                     "type": "boolean"
-                }
-            }
-        },
-        "entity.Student": {
-            "type": "object",
-            "properties": {
-                "class": {
-                    "type": "string"
-                },
-                "gender": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "score": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "number"
-                    }
-                },
-                "student_id": {
-                    "type": "string"
                 }
             }
         }

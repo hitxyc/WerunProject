@@ -9,4 +9,10 @@ func main() {
 	// @host localhost:8080
 	// @BasePath
 	api.InitRouter()
+	/*err := utils.DealWithCSV("./student.csv", false)
+	if err != nil {
+		panic(err)
+	}
+	db := mapper.GetDatabase()
+	fmt.Printf("%+v\n", db)*/
 }

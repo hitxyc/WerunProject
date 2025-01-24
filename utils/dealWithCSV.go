@@ -18,7 +18,7 @@ import (
 
 var lock sync.Mutex
 
-func DealWithCSV(filename string) error {
+func DealWithCSV(filename string, is_graduate bool) error {
 	// 打开文件
 	file, err := os.Open(filename)
 	if err != nil {
@@ -58,7 +58,11 @@ func DealWithCSV(filename string) error {
 					// 转为GBK编码, 将一行内容分割
 					contents := transToGBK(&record, decoder)
 					// 将csv文件中的内容转为entity.Student
-					transToStudent(&informationTable, &contents, studentChan, &wq)
+					if is_graduate {
+						transToGraduate(&informationTable, &contents, studentChan, &wq)
+					} else {
+						transToUndergraduate(&informationTable, &contents, studentChan, &wq)
+					}
 				}()
 			}
 		}
@@ -67,7 +71,7 @@ func DealWithCSV(filename string) error {
 		close(studentChan)
 	}()
 	// 将数据存入数据库中
-	AddToDatabase(studentChan)
+	addToDatabase(studentChan)
 	return nil
 }
 
@@ -88,35 +92,70 @@ func getInformation(content *[]string) []string {
 	return informationTable
 }
 
-// transToStudent 将csv文件中的信息绑定在entity.Student结构体上
-func transToStudent(informationTable *[]string, contents *[]string, studentChan chan<- entity.Student, wq *sync.WaitGroup) {
-	var student entity.Student
-	student.Score = make(map[string]float64)
+// transToUndergraduate 将csv文件中的信息绑定在entity.Undergraduate结构体上
+func transToUndergraduate(informationTable *[]string, contents *[]string, studentChan chan<- entity.Student, wq *sync.WaitGroup) {
+	var us = &entity.UndergraduateStudent{}
+	// 本科生
+	us.Score = make(map[string]float64)
 	for index, value := range *informationTable {
 		switch value {
+		case "学号":
+			us.StudentId = (*contents)[index] // 绑定学生学号
 		case "考号":
-			student.StudentId = (*contents)[index] // 绑定学生学号
+			us.StudentId = (*contents)[index] // 绑定学生考号
 		case "姓名":
-			student.Name = (*contents)[index] // 绑定学生姓名
+			us.Name = (*contents)[index] // 绑定学生姓名
 		case "性别":
-			student.Gender = (*contents)[index] // 绑定学生性别
+			us.Gender = (*contents)[index] // 绑定学生性别
 		case "班级":
-			student.Class = (*contents)[index] // 绑定学生班级
+			us.Class = (*contents)[index] // 绑定学生班级
 		default:
 			score, _ := strconv.ParseFloat((*contents)[index], 64)
-			student.Score[(*informationTable)[index]] = score
+			us.Score[(*informationTable)[index]] = score
 		}
 	}
-	studentChan <- student
+	if us.StudentId != "" {
+		studentChan <- us
+	}
 	wq.Done()
 }
 
-// AddToDatabase 将学生信息传入数据库中
-func AddToDatabase(studentChan <-chan entity.Student) {
+func transToGraduate(informationTable *[]string, contents *[]string, studentChan chan<- entity.Student, wq *sync.WaitGroup) {
+	var gs = &entity.GraduateStudent{}
+	// 研究生
+	gs.Score = make(map[string]float64)
+	for index, value := range *informationTable {
+		switch value {
+		case "学号":
+			gs.StudentId = (*contents)[index] // 绑定学生学号
+		case "考号":
+			gs.StudentId = (*contents)[index] // 绑定学生考号
+		case "姓名":
+			gs.Name = (*contents)[index] // 绑定学生姓名
+		case "性别":
+			gs.Gender = (*contents)[index] // 绑定学生性别
+		case "导师":
+			gs.Tutor = (*contents)[index] // 绑定学生班级
+		default:
+			score, _ := strconv.ParseFloat((*contents)[index], 64)
+			gs.Score[(*informationTable)[index]] = score
+		}
+	}
+	if gs.StudentId != "" {
+		studentChan <- gs
+	}
+	wq.Done()
+}
+
+// addToDatabase 将学生信息传入数据库中
+func addToDatabase(studentChan <-chan entity.Student) {
 	var sm mapper.StudentMapper
 	for student := range studentChan {
 		lock.Lock()
-		sm.SaveStudent(&student)
+		err := sm.SaveStudent(&student)
+		if err != nil {
+			log.Println(err)
+		}
 		lock.Unlock()
 	}
 }
